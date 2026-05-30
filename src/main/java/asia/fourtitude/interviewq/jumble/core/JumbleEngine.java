@@ -2,6 +2,7 @@ package asia.fourtitude.interviewq.jumble.core;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.*;
 
 public class JumbleEngine {
 
@@ -19,11 +20,29 @@ public class JumbleEngine {
      * @return  The scrambled output/letters.
      */
     public String scramble(String word) {
-        /*
-         * Refer to the method's Javadoc (above) and implement accordingly.
-         * Must pass the corresponding unit tests.
-         */
-        throw new UnsupportedOperationException("to be implemented");
+    	if (word == null || word.length() <= 6) {
+            return word;
+        }
+
+        Random random = new Random();
+        char[] chars = word.toCharArray();
+        String scrambled;
+
+        do {
+            // Fisher-Yates Shuffle
+            for (int i = chars.length - 1; i > 0; i--) {
+                int j = random.nextInt(i+1);
+
+                char temp = chars[i];
+                chars[i] = chars[j];
+                chars[j] = temp;
+            }
+
+            scrambled = new String(chars);
+
+        } while (scrambled.equals(word));
+
+        return scrambled;
     }
 
     /**
@@ -44,11 +63,34 @@ public class JumbleEngine {
      * @see https://www.google.com/search?q=palindrome+meaning
      */
     public Collection<String> retrievePalindromeWords() {
-        /*
-         * Refer to the method's Javadoc (above) and implement accordingly.
-         * Must pass the corresponding unit tests.
-         */
-        throw new UnsupportedOperationException("to be implemented");
+        List<String> palindromeWords = new ArrayList<>();
+        
+        try (
+        		InputStream inputStream = getClass().getClassLoader().getResourceAsStream("words.txt");
+        		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))
+        ) {
+            String word;
+            
+            while ((word = reader.readLine()) != null) {
+
+                word = word.trim();
+
+                if (word.length() <= 1) {
+                    continue;
+                }
+
+                // Use inbuilt StringBuilder to reverse
+                String reversed = new StringBuilder(word).reverse().toString();
+
+                if (word.equalsIgnoreCase(reversed)) {
+                    palindromeWords.add(word);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return palindromeWords;
     }
 
     /**
@@ -65,11 +107,44 @@ public class JumbleEngine {
      *          Or null if none matching.
      */
     public String pickOneRandomWord(Integer length) {
-        /*
-         * Refer to the method's Javadoc (above) and implement accordingly.
-         * Must pass the corresponding unit tests.
-         */
-        throw new UnsupportedOperationException("to be implemented");
+    	Map<Integer, List<String>> wordsByLengthMap = new HashMap<>();
+        List<String> allWordsList = new ArrayList<>();
+        List<String> targetList = new ArrayList<>();
+        Random random = new Random();
+        
+    	try (
+    			InputStream inputStream = getClass().getClassLoader().getResourceAsStream("words.txt");
+    			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))
+        ) {
+    		String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.isEmpty()) {
+                	allWordsList.add(line);
+                	// Group by length
+                    int len = line.length();
+                    // If the key doesn't exist, create a new ArrayList, then add the word
+                    wordsByLengthMap.computeIfAbsent(len, k -> new ArrayList<>()).add(line);
+                }
+            }
+    	} catch (IOException e) {
+            e.printStackTrace();
+        }
+    	
+        if (length == null) {
+        	// No given length, pick from the entire master pool
+        	targetList = allWordsList;
+        } else {
+            // Grab the pre-filtered bucket of words matching the length
+            targetList = wordsByLengthMap.get(length);
+        }
+        
+    	if (targetList.isEmpty()) {
+            return null;
+        }
+    	
+    	// Pick a random index from the chosen list in O(1) time
+        int randomIndex = random.nextInt(targetList.size());
+        return targetList.get(randomIndex);
     }
 
     /**
@@ -85,11 +160,28 @@ public class JumbleEngine {
      * @return  true if `word` exists in internal word list.
      */
     public boolean exists(String word) {
-        /*
-         * Refer to the method's Javadoc (above) and implement accordingly.
-         * Must pass the corresponding unit tests.
-         */
-        throw new UnsupportedOperationException("to be implemented");
+    	Set<String> wordSet = new HashSet<>();
+    	
+    	if (word == null) {
+            return false;
+        }
+    	
+    	try (
+    			InputStream inputStream = getClass().getClassLoader().getResourceAsStream("words.txt");
+    			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))
+    	) {
+    		String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.isEmpty()) {
+                    wordSet.add(line);
+                }
+            }
+    	} catch (IOException e) {
+            e.printStackTrace();
+        }
+    	
+    	// Convert input to lower case to match our stored scheme, then look up in O(1) time
+    	return wordSet.contains(word.trim().toLowerCase());
     }
 
     /**
